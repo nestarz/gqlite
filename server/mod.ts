@@ -21,7 +21,7 @@ import sql from "https://esm.sh/noop-tag@2.0.0";
 import DataLoader from "https://esm.sh/v116/dataloader@2.2.2/es2022/dataloader.mjs";
 import { GraphQLHTTP } from "https://gist.githubusercontent.com/nestarz/7c0275b94b4e18ed1a108237732fd57f/raw/c6b2d8e9f0191536e09997c1383478f37400cac5/gql.http.ts";
 
-import { GraphQLSafeInt as GraphQLInt } from "./GraphQLSafeInt.ts";
+import { GraphQLSafeInt as GraphQLInt } from "./types/GraphQLSafeInt.ts";
 
 export { DB } from "https://deno.land/x/sqlite@v3.7.2/mod.ts";
 import type {

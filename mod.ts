@@ -1,4 +1,4 @@
-import gqlite, { type DBWithHash } from "./src/gqlite.ts";
+import gqlite, { type DBWithHash } from "./server/mod.ts";
 
 export { default as sql } from "https://esm.sh/noop-tag@2.0.0";
 
