@@ -123,8 +123,8 @@ const createReverseForeignKeyFields = (name, tables) => {
         args: {
           order_by: { type: createOrderByInputType(name, table.columns) },
           where: { type: createBoolExpInputType(name, table.columns) },
-          limit: { type: new GraphQLInt() },
-          offset: { type: new GraphQLInt() },
+          limit: { type: GraphQLInt },
+          offset: { type: GraphQLInt },
         },
         resolve: async (parent, args, { db }) => {
           const where = {
