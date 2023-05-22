@@ -301,8 +301,8 @@ const createQueryType = (tables) => {
           args: {
             where: { type: createBoolExpInputType(name, columns) },
             order_by: { type: createOrderByInputType(name, columns) },
-            limit: { type: new GraphQLInt() },
-            offset: { type: new GraphQLInt() },
+            limit: { type: GraphQLInt },
+            offset: { type: GraphQLInt },
           },
           resolve: async (_, args, { db }) =>
             await fetchRecords(db, name, args),
