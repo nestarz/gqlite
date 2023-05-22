@@ -123,6 +123,8 @@ const createReverseForeignKeyFields = (name, tables) => {
         args: {
           order_by: { type: createOrderByInputType(name, table.columns) },
           where: { type: createBoolExpInputType(name, table.columns) },
+          limit: { type: new GraphQLInt() },
+          offset: { type: new GraphQLInt() },
         },
         resolve: async (parent, args, { db }) => {
           const where = {
@@ -246,15 +248,20 @@ const findTableByName = (tables, name) => {
   return table;
 };
 
-const fetchRecords = async (db, tableName, { where, limit, order_by }) => {
+const fetchRecords = async (
+  db,
+  tableName,
+  { where, limit, order_by, offset }
+) => {
   const { clause: whereClause, values } = buildWhereClause(where);
   const limitClause = limit ? `LIMIT ${limit}` : "";
+  const offsetClause = offset ? `OFFSET ${offset}` : "";
   const orderClause = order_by
     ? `ORDER BY ${Object.entries(order_by).map(
         ([key, value]) => `"${key}" ${value}`
       )}`
     : "";
-  const query = `SELECT * FROM ${tableName} ${whereClause} ${orderClause} ${limitClause}`;
+  const query = `SELECT * FROM ${tableName} ${whereClause} ${orderClause} ${limitClause} ${offsetClause}`;
   const result = await db.query(query, values);
   return result;
 };
@@ -294,6 +301,8 @@ const createQueryType = (tables) => {
           args: {
             where: { type: createBoolExpInputType(name, columns) },
             order_by: { type: createOrderByInputType(name, columns) },
+            limit: { type: new GraphQLInt() },
+            offset: { type: new GraphQLInt() },
           },
           resolve: async (_, args, { db }) =>
             await fetchRecords(db, name, args),
