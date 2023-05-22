@@ -1,5 +1,3 @@
-import "https://deno.land/x/corejs@v3.26.1/index.js";
-
 import {
   GraphQLBoolean,
   GraphQLEnumType,
@@ -700,6 +698,17 @@ const createMutationType = (tables) =>
     ),
   });
 
+const group = <T, U>(array: T[], callback: (arg: T) => U) => {
+  const result = {};
+  array.forEach((value, index, array) => {
+    const key = callback.call(this, value, index, array);
+    result[key] ??= [];
+    result[key].push(value);
+  });
+
+  return result;
+};
+
 export const createGetSchema = (db: DBWithHash) => {
   let schema: GraphQLSchema;
   let hash: string;
@@ -717,7 +726,7 @@ export const createGetSchema = (db: DBWithHash) => {
       WHERE s.type = 'table' AND s.name NOT LIKE 'sqlite_%';
     `
       )
-      .then((results) => results.group(({ table_name }) => table_name))
+      .then((results) => group(results ?? [], ({ table_name }) => table_name))
       .then(Object.entries)
       .then((arr) => arr.map(([name, columns]) => ({ name, columns })))
       .then((tables) =>
