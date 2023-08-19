@@ -53,7 +53,7 @@ export default function graphql<TData = any, TVariables = Record<string, any>>({
   variables,
   handler,
   url,
-}: GraphQLOptions<TVariables>): Promise<TData> {
+}: GraphQLOptions<TVariables>): Promise<Response> {
   const req = new Request(url, {
     method: "POST",
     body: JSON.stringify({ query, variables }),
@@ -72,8 +72,8 @@ export default function graphql<TData = any, TVariables = Record<string, any>>({
         parseJSONKeys(data as any, (key) =>
           /\b(?:((?:\w*_)*)(json)((?:_\w*)*))\b/.test(key)
         ) as TData
-    );
-  //.then((v) => (console.log(v), v));
+    )
+    .then((data) => new Response(JSON.stringify({ data })));
 }
 
 export const createGraphqlFromHandler =

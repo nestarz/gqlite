@@ -1,16 +1,40 @@
 import gqlite, { type DBWithHash } from "./src/gqlite.ts";
+import { createTypeDefsGen } from "./src/createTypeDefsGen.ts";
+import { createGraphqlFromHandler } from "./client/mod.ts";
 
+import type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.4.2/server.ts";
 export { default as sql } from "https://esm.sh/noop-tag@2.0.0";
 
-export default async (db: DBWithHash) => {
-  const { handler, getTypeScriptDef, saveDefToFile } = await gqlite(db);
-  await saveDefToFile();
+export type GQLiteClientContext = {
+  graphQLClient: ReturnType<typeof createGraphqlFromHandler>;
+};
+
+export const createGQLite = async (
+  db: DBWithHash,
+  options: { generateTypes: boolean }
+) => {
+  const { handler } = await gqlite(db);
+  const client = createGraphqlFromHandler(handler);
+  const { saveTypeDefs, getTypeDefs } = createTypeDefsGen(client);
+  if (options.generateTypes) await saveTypeDefs();
   return {
-    "": handler,
-    "GET@/types.d.ts": async () => {
-      return new Response(await getTypeScriptDef(), {
+    handler,
+    client,
+    saveTypeDefs,
+    getTypeDefs,
+    freshMiddleware: async (
+      _req: Request,
+      ctx: MiddlewareHandlerContext<{ graphQLClient: typeof client }>
+    ) => {
+      ctx.state.graphQLClient = client;
+      return await ctx.next();
+    },
+    typeDefsHandler: async () => {
+      return new Response(await getTypeDefs(), {
         headers: { "content-type": "application/typescript" },
       });
     },
   };
 };
+
+export default createGQLite;
