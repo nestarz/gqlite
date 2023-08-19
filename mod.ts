@@ -11,12 +11,15 @@ export type GQLiteClientContext = {
 
 export const createGQLite = async (
   db: DBWithHash,
-  options: { generateTypes: boolean }
+  options: { disableTypeScriptDefinitionsGeneration: boolean }
 ) => {
   const { handler } = await gqlite(db);
   const client = createGraphqlFromHandler(handler);
   const { saveTypeDefs, getTypeDefs } = createTypeDefsGen(client);
-  if (options.generateTypes) await saveTypeDefs();
+  
+  if (!options.disableTypeScriptDefinitionsGeneration)
+    await saveTypeDefs().catch(console.error);
+
   return {
     handler,
     client,

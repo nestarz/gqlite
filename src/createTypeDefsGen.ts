@@ -29,11 +29,11 @@ const createCache = () => {
 };
 
 export const createGetSchemaFromUrl = (
-  graphqlClient: (...args: any[]) => Promise<Response>
+  graphqlClient: (arg: { query: string }) => Promise<Response>
 ) => {
   return async () => {
     console.time("[introspection]");
-    const response = await graphqlClient(getIntrospectionQuery());
+    const response = await graphqlClient({ query: getIntrospectionQuery() });
     const { data } = await response.json();
     const graphqlSchemaObj = buildClientSchema(data);
     console.timeEnd("[introspection]");

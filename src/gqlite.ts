@@ -9,12 +9,9 @@ import {
   GraphQLScalarType,
   GraphQLSchema,
   GraphQLString,
-  printSchema,
 } from "https://deno.land/x/graphql_deno@v15.0.0/mod.ts";
 import { search as jmespath } from "https://deno.land/x/jmespath@v0.2.2/index.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.7.2/mod.ts";
-import { Parser } from "https://esm.sh/graphql-js-tree@0.3.5";
-import { TreeToTS } from "https://esm.sh/graphql-zeus-core@5.3.0";
 import sql from "https://esm.sh/noop-tag@2.0.0";
 import DataLoader from "https://esm.sh/v116/dataloader@2.2.2/es2022/dataloader.mjs";
 import { GraphQLHTTP } from "https://gist.githubusercontent.com/nestarz/7c0275b94b4e18ed1a108237732fd57f/raw/c6b2d8e9f0191536e09997c1383478f37400cac5/gql.http.ts";
@@ -759,56 +756,13 @@ export const createGetSchema = (db: DBWithHash) => {
   };
 };
 
-export const createGetTypeScriptDef = (
-  getSchema: () => Promise<GraphQLSchema>
-) => {
-  let typeScriptDefinition: string;
-  let schemaCache: string;
-  return async () => {
-    const schema = printSchema(await getSchema());
-    if (schema && schema === schemaCache && typeScriptDefinition)
-      return typeScriptDefinition;
-    else if (!schema) console.warn("No schema provided");
-    else schemaCache = schema;
-
-    console.time("[codegen]");
-    typeScriptDefinition = TreeToTS.resolveBasisTypes(Parser.parse(schema));
-    console.timeEnd("[codegen]");
-    return typeScriptDefinition;
-  };
-};
-
-const readOnly = !!Deno.env.get("DENO_DEPLOYMENT_ID");
-
-export const createSaveDefToFile = (
-  getTypeScriptDef: ReturnType<typeof createGetTypeScriptDef>,
-  name = "types.d.ts"
-) => {
-  let cache: string;
-  return async () => {
-    const typeScriptDefinition = await getTypeScriptDef();
-    if (cache === typeScriptDefinition || readOnly) return;
-    const fn = [Deno.cwd(), name].join("/");
-    cache = typeScriptDefinition;
-    if ((await Deno.readTextFile(fn).catch(() => "")) !== typeScriptDefinition)
-      await Deno.writeTextFile(fn, typeScriptDefinition);
-  };
-};
-// const prefixLog = (v) => `[gqlite] ${v}`;
-
 export default (db: DBWithHash) => {
   const getSchema = createGetSchema(db);
-  const getTypeScriptDef = createGetTypeScriptDef(getSchema);
-  const saveDefToFile = createSaveDefToFile(getTypeScriptDef);
   return {
-    getSchema,
-    getTypeScriptDef,
-    saveDefToFile,
     handler: async (req: Request): Promise<Response> => {
       console.time("[gqlite] get schema");
       const schema = await getSchema();
       console.timeEnd("[gqlite] get schema");
-      await saveDefToFile();
 
       if (req.headers.get("upgrade") === "websocket") {
         // Handle GraphQL subscriptions
