@@ -5,6 +5,7 @@ import {
   parse,
   type GraphQLSchema,
 } from "https://deno.land/x/graphql_deno@v15.0.0/mod.ts";
+import { GraphQLFetchResult, GraphQLOptions } from "../mod.ts";
 
 const readOnly = !!Deno.env.get("DENO_DEPLOYMENT_ID");
 
@@ -29,13 +30,15 @@ const createCache = () => {
 };
 
 export const createGetSchemaFromUrl = (
-  graphqlClient: (arg: { query: string }) => Promise<Response>
+  graphqlClient: (arg: { query: string }) => Promise<GraphQLFetchResult>
 ) => {
   return async () => {
     console.time("[introspection]");
-    const response = await graphqlClient({ query: getIntrospectionQuery() });
-    const { data } = await response.json();
-    const graphqlSchemaObj = buildClientSchema(data);
+    const { data, errors } = await graphqlClient({
+      query: getIntrospectionQuery(),
+    });
+    if (errors) console.error(errors);
+    const graphqlSchemaObj = data ? buildClientSchema(data) : null;
     console.timeEnd("[introspection]");
     return graphqlSchemaObj;
   };
@@ -92,13 +95,16 @@ export const createSaveDefToFile = (
 };
 
 export const createTypes =
-  (fetcher: (options: { query: string }) => Promise<Response>) => () =>
+  (fetcher: (options: { query: string }) => Promise<GraphQLFetchResult>) =>
+  () =>
     createSaveDefToFile(
       createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))
     )().catch(console.error);
 
 export const createTypeDefsGen = (
-  fetcher: (options: { query: string }) => Promise<Response>
+  fetcher: <TData = any, TVariables = any>(
+    options: GraphQLOptions<TData, TVariables>
+  ) => Promise<GraphQLFetchResult<TData>>
 ) => ({
   saveTypeDefs: createSaveDefToFile(
     createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))

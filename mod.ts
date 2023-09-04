@@ -1,12 +1,13 @@
+import type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.4.2/server.ts";
+
 import gqlite, { type DBWithHash } from "./src/gqlite.ts";
 import { createTypeDefsGen } from "./src/createTypeDefsGen.ts";
-import { createGraphqlFromHandler } from "./client/mod.ts";
+import { createGraphqlFromHandlerWithJSON } from "./client/mod.ts";
 
-import type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.4.2/server.ts";
-export { default as sql } from "https://esm.sh/noop-tag@2.0.0";
+export * from "./client/mod.ts";
 
 export type GQLiteClientContext = {
-  graphQLClient: ReturnType<typeof createGraphqlFromHandler>;
+  graphQLClient: ReturnType<typeof createGraphqlFromHandlerWithJSON>;
 };
 
 export const createGQLite = async (
@@ -14,9 +15,9 @@ export const createGQLite = async (
   options: { disableTypeScriptDefinitionsGeneration: boolean }
 ) => {
   const { handler } = await gqlite(db);
-  const client = createGraphqlFromHandler(handler);
+  const client = createGraphqlFromHandlerWithJSON(handler);
   const { saveTypeDefs, getTypeDefs } = createTypeDefsGen(client);
-  
+
   if (!options.disableTypeScriptDefinitionsGeneration)
     await saveTypeDefs().catch(console.error);
 
