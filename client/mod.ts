@@ -86,27 +86,27 @@ export const createGraphqlFromHandlerWithJSON: typeof createGraphqlFromHandler =
   (handler, config) =>
     createGraphqlFromHandler(handler, {
       ...config,
-      afterHook: <T>(payload): GraphQLFetchResult<T> => {
+      afterHook: <T>(payload: GraphQLFetchResult<T>): GraphQLFetchResult<T> => {
         const tryParseJSON = (str: string): unknown => {
           try { return JSON.parse(str); } catch { return str; } // prettier-ignore
         };
-        const parseJSONKeys = (
+        const parseJSONKeys = <T>(
           obj: JSON | undefined,
           test: (key: string) => boolean
-        ): JSON => {
-          const result = Array.isArray(obj) ? [] : {};
+        ): T => {
+          const result = (Array.isArray(obj) ? [] : {}) as JSON;
           for (const key in obj)
             if (Object.hasOwn(obj, key))
               if (typeof obj[key] === "object" && obj[key] !== null)
-                result[key] = parseJSONKeys(obj[key] as JSON, test);
+                result[key] = parseJSONKeys<JSON>(obj[key] as JSON, test);
               else if (typeof obj[key] === "string" && test(key))
                 result[key] = tryParseJSON(obj[key] as string);
               else result[key] = obj[key];
-          return result;
+          return result as T;
         };
         return {
           ...payload,
-          data: parseJSONKeys(payload.data, (key) =>
+          data: parseJSONKeys<T>(payload.data!, (key) =>
             /\b(?:((?:\w*_)*)(json)((?:_\w*)*))\b/.test(key)
           ),
         };
